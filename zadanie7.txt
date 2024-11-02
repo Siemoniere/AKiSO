@@ -1,0 +1,10 @@
+#!/bin/bash
+
+for file in *; do
+    if [ -f "$file" ]; then
+        lowercase=$(echo "$file" | tr '[:upper:]' '[:lower:]')
+        if [ "$file" != "$lowercase" ]; then
+            mv "$file" "$lowercase"
+        fi
+    fi
+done

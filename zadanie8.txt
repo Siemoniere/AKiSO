@@ -1,0 +1,22 @@
+// Plik: boot.c
+void main() {
+    unsigned char color_code;
+    unsigned short pos;
+    char *video_memory = (char*) 0xb8000; // Pamięć wideo dla trybu tekstowego
+
+    for (unsigned char bg = 0; bg < 8; bg++) {         // Kolory tła (0-7)
+        for (unsigned char fg = 0; fg < 16; fg++) {    // Kolory czcionki (0-15)
+            color_code = (bg << 4) | fg;
+            
+            const char *text = "Hello World!";
+            pos = (bg * 80) + fg; // Ustal pozycję dla każdego napisu
+            for (int i = 0; text[i] != '\0'; i++) {
+                video_memory[2 * (pos + i)] = text[i];          // Znak
+                video_memory[2 * (pos + i) + 1] = color_code;   // Kolor
+            }
+        }
+    }
+
+    // Pętla nieskończona, aby zapobiec wyjściu z programu
+    while (1);
+}
