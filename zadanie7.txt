@@ -2,9 +2,9 @@
 
 for file in *; do
     if [ -f "$file" ]; then
-        lowercase=$(echo "$file" | tr '[:upper:]' '[:lower:]')
-        if [ "$file" != "$lowercase" ]; then
-            mv "$file" "$lowercase"
+        small=$(echo "$file" | tr '[:upper:]' '[:lower:]')
+        if [ "$file" != "$small" ]; then
+            mv "$file" "$small"
         fi
     fi
 done
