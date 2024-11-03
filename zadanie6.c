@@ -3,7 +3,7 @@
 
 int main() {
     const char *text = "Hello, World!";
-    
+
     for (int color = 30; color <= 37; color++) {
         printf("\033[%dm%s\033[0m\n", color, text);
         usleep(200000);  // Opóźnienie dla lepszego efektu
@@ -12,12 +12,12 @@ int main() {
         printf("\033[%dm%s\033[0m\n", color, text);
         usleep(200000);  // Opóźnienie dla lepszego efektu
     }
-    
+
     return 0;
 }
-
+/*
 for (int color = 0; color < 256; color++) {
     printf("\033[38;5;%dm%s\033[0m\n", color, text);
     usleep(100000);  // krótsze opóźnienie
-}
+}*/
 
