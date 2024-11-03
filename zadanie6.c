@@ -15,9 +15,4 @@ int main() {
 
     return 0;
 }
-/*
-for (int color = 0; color < 256; color++) {
-    printf("\033[38;5;%dm%s\033[0m\n", color, text);
-    usleep(100000);  // krótsze opóźnienie
-}*/
 
