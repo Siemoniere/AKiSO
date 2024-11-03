@@ -6,18 +6,12 @@ int main() {
     
     for (int color = 30; color <= 37; color++) {
         printf("\033[%dm%s\033[0m\n", color, text);
-        usleep(200000);  // Opóźnienie dla lepszego efektu
+        usleep(200000);
     }
     for (int color = 90; color <= 97; color++) {
         printf("\033[%dm%s\033[0m\n", color, text);
-        usleep(200000);  // Opóźnienie dla lepszego efektu
+        usleep(200000);
     }
     
     return 0;
 }
-
-for (int color = 0; color < 256; color++) {
-    printf("\033[38;5;%dm%s\033[0m\n", color, text);
-    usleep(100000);  // krótsze opóźnienie
-}
-
