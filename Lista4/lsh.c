@@ -1,102 +1,109 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <stdbool.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-// Funkcja obsługująca komendę cd
-void lsh_cd(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "lsh: expected argument to \"cd\"\n");
-    } else {
-        if (chdir(args[1]) != 0) {
-            perror("lsh");
-        }
+/* Obsługa zombie */
+void sigchld_handler(int sig) {
+  while (waitpid(-1, NULL, WNOHANG) > 0);
+}
+
+/* Implementacja komendy cd */
+int cd(char **command) {
+  if (command[1] == NULL) {
+    fprintf(stderr, "lsh: oczekiwano argumentu dla \"cd\"\n");
+  } else {
+    if (chdir(command[1]) != 0) {
+      perror("lsh");
     }
+  }
+  return 1;
 }
 
-// Funkcja obsługująca komendę exit
-void lsh_exit() {
-    printf("Exiting lsh...\n");
-    exit(0);
+/* Implementacja komendy exit */
+int exit(char **command) {
+  return 0;
 }
 
-// Funkcja do rozdzielania linii na argumenty
-int lsh_parse_line(char *line, char **args) {
-    int argc = 0;
-    char *token = strtok(line, " \t\n");
-    while (token != NULL && argc < MAX_ARGS - 1) {
-        args[argc++] = token;
-        token = strtok(NULL, " \t\n");
+/* Funkcja uruchamiająca program */
+int lsh_launch(char **command) {
+  pid_t pid = fork();
+  if (pid == 0) {
+    if (execvp(command[0], command) == -1) {
+      perror("lsh");
     }
-    args[argc] = NULL;
-    return argc;
+    exit(EXIT_FAILURE);
+  } else if (pid < 0) {
+    perror("lsh");
+  } else {
+    wait(NULL);
+  }
+  return 1;
 }
 
-// Funkcja do obsługi procesów zombie
-void reap_zombies() {
-    while (waitpid(-1, NULL, WNOHANG) > 0);
+/* Funkcja wykonująca komendy */
+int lsh_execute(char **command) {
+  if (command[0] == NULL) return 1;
+
+  if (strcmp(command[0], "cd") == 0) {
+    return cd(command);
+  } else if (strcmp(command[0], "exit") == 0) {
+    return exit(command);
+  }
+  return lsh_launch(command);
 }
 
-// Funkcja do uruchamiania komend zewnętrznych
-void lsh_execute(char **args, bool background) {
-    pid_t pid = fork();
-    if (pid == 0) {
-        // Proces potomny
-        if (execvp(args[0], args) == -1) {
-            perror("lsh");
-        }
-        exit(EXIT_FAILURE);
-    } else if (pid < 0) {
-        // Błąd w fork()
-        perror("lsh");
-    } else {
-        // Proces nadrzędny
-        if (!background) {
-            waitpid(pid, NULL, 0);
-        }
+/* Funkcja odczytująca linię z stdin */
+char *lsh_read_line() {
+  char *line = NULL;
+  size_t bufsize = 0;
+
+  if (getline(&line, &bufsize, stdin) == -1) {
+    free(line);
+    return NULL;
+  }
+  return line;
+}
+
+/* Funkcja dzieląca linię na tokeny */
+char **lsh_split_line(char *line) {
+  int bufsize = 64;
+  int position = 0;
+  char **tokens = malloc(bufsize * sizeof(char *));
+  char *token = strtok(line, " \t\r\n\a");
+
+  while (token != NULL) {
+    tokens[position++] = token;
+    token = strtok(NULL, " \t\r\n\a");
+  }
+  tokens[position] = NULL;
+  return tokens;
+}
+
+/* Główna pętla powłoki */
+void lsh_loop(void) {
+  char *line;
+  char **command;
+  int status = 1;
+
+  while (status) {
+    printf("> ");
+    line = lsh_read_line();
+    if (line == NULL) {
+      printf("\n");
+      break;
     }
+    command = lsh_split_line(line);
+    status = lsh_execute(command);
+    free(line);
+    free(command);
+  }
 }
 
+/* Funkcja main */
 int main() {
-    char line[1024];
-    char *args[100];
-
-    while (true) {
-        printf("lsh> ");
-        fflush(stdout);
-
-        // Odczyt linii komend
-        if (fgets(line, sizeof(line), stdin) == NULL) {
-            printf("\n"); // Ctrl+D
-            break;
-        }
-
-        // Usuwanie zakończonych procesów w tle
-        reap_zombies();
-
-        // Parsowanie linii
-        int argc = lsh_parse_line(line, args);
-        if (argc == 0) {
-            continue; // Pusta linia
-        }
-
-        // Obsługa komend wbudowanych
-        if (strcmp(args[0], "cd") == 0) {
-            lsh_cd(args);
-        } else if (strcmp(args[0], "exit") == 0) {
-            lsh_exit();
-        } else {
-            // Sprawdzenie, czy komenda ma być uruchomiona w tle
-            bool background = false;
-            if (argc > 0 && strcmp(args[argc - 1], "&") == 0) {
-                background = true;
-                args[argc - 1] = NULL; // Usuń '&' z argumentów
-            }
-            lsh_execute(args, background);
-        }
-    }
-
-    return 0;
+  signal(SIGCHLD, sigchld_handler);
+  lsh_loop();
+  return 0;
 }
