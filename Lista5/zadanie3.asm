@@ -11,14 +11,14 @@ _start:
 
 loop:
     mov		edx, eax
-    and		edx, 0xF
-    add		dl, '0'
+    and		edx, 0xF ;maskujemy tak aby miec 4 najmlodsze bity
+    add		dl, '0'; konwersja na ASCII
     cmp		dl, '9'
     jbe		nie_litera
     add		dl, 7; od A do F dla powyzej 9
 nie_litera:
-    mov		byte [ebx + ecx -1], dl
-    shr		eax, 4
+    mov		byte [ebx + ecx -1], dl; cyfra do wyniku od konca
+    shr		eax, 4; przesuniecie o 4 bity
     loop loop
 
     mov		eax, wynik
