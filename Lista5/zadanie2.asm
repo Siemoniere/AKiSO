@@ -9,7 +9,7 @@ SECTION .text
 global _start
 _start:
 
-    xor		eax, eax
+    xor		eax, eax ;eax to wynik
     mov		ecx, 9 ;pod ecx ustalamy ilosc elementow macierzy 3x3
     lea		edx, [macierz] ;pod edx mamy wskaznik do macierzy
 
